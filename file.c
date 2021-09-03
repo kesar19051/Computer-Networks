@@ -16,6 +16,7 @@
 struct time_process{
     int time;
     int process;
+    int kernel_time;
 };
 
 
@@ -25,7 +26,7 @@ void create();
 void check(struct time_process);
 void display_pqueue();
 //
-struct time_process endData ={-1, -1};
+struct time_process endData ={-1, -1, -1};
 
 struct time_process pri_que[MAX];
 
@@ -106,7 +107,6 @@ void delete_by_priority(struct time_process data){
         return;
 
         }
-
     }
 }
 
@@ -159,9 +159,11 @@ int is_pid_folder(const struct dirent *entry) {
 int files;
 
 
-int main()
-{
+int main(){
 
+    int n;
+    printf("Enter n: ");
+    scanf("%d", &n);
     DIR *folder;
     
     struct dirent *entry;
@@ -181,7 +183,7 @@ int main()
         insert_begin(pid);
         files++;
     }
-    printf("%d\n", files);
+    // printf("%d\n", files);
 	//printf("%c",'\n');
 	//printf("%c",'\n');
     chdir("/proc");
@@ -208,25 +210,62 @@ int main()
 
         char *token = strtok(buff," ");
         int iter = 0;
-    
         int utime;
         int stime;
         while(token!=NULL){
+            // printf("%s ", token);
             if(iter==13) utime = atoi(token);
             if(iter==14) stime = atoi(token);
             iter = iter+1;
             token = strtok(NULL, " ");
         }
-        memset(buff,0,strlen(buff));
         //printf("\n");
-        struct time_process s1 = {utime+stime,pid};
+        struct time_process s1 = {utime+stime,pid,stime};
+        memset(buff,0,strlen(buff));
         insert_by_priority(s1);
         tmp = tmp->next;
         chdir("..");
     }
 
-    display_pqueue();
     closedir(folder);
+
+    chdir("/home/kesar/Desktop");
+    
+    FILE *fp;
+    fp = fopen("hello.txt", "a");
+    if(fp == NULL)
+    {
+        /* Unable to open file hence exit */
+        printf("Unable to open file.\n");
+        printf("Please check whether file exists and you have read privilege.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for(int i = 0; i<n; i++){
+        int a = pri_que[i].process;
+        int b = pri_que[i].time-pri_que[i].kernel_time;
+        int c = pri_que[i].kernel_time;
+
+        char stra[10];
+        char strb[10];
+        char strc[10];
+        sprintf(stra, "%d", a);
+        strcat(stra, " ");
+        sprintf(strb, "%d", b);
+        strcat(strb, " ");
+        sprintf(strc, "%d", c);
+        strcat(strc, " ");
+
+        strcat(stra, strb);
+        strcat(stra, strc);
+
+        char finalString[] = "PID; User CPU Time; Kernel CPU Time: ";
+        strcat(finalString, stra);
+
+        fprintf(fp, "%s\n", finalString);
+    }
+
+    fclose(fp);
 
     return(0);
 }
