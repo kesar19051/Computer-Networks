@@ -175,6 +175,7 @@ void func(int sockfd)
 
 int main()
 {
+    printf("%c",'\n');
 	int sockfd, connfd;
 	struct sockaddr_in servaddr, cli;
 
@@ -201,10 +202,19 @@ int main()
 	else
 		printf("connected to the server..\n");
 
-	char buff[MAX];
+	int n;
+    printf("Enter n: ");
+    scanf("%d", &n);
+    char num[20];
+    sprintf(num,"%d",n);
+
+    char buff[MAX];
+
+    write(sockfd,num,sizeof(num));  
+
 	FILE *fp;
          int ch = 0;
-            fp = fopen("glad_received.txt","a");      
+            fp = fopen("receivedFromServer.txt","a");      
             if(fp == NULL)
     {
         /* Unable to open file hence exit */
@@ -214,16 +224,16 @@ int main()
     }      
             int words;
 		read(sockfd, &words, sizeof(int));
-            printf("Passed integer is : %d\n" , words);      //Ignore , Line for Testing
+            // printf("Passed integer is : %d\n" , words);      //Ignore , Line for Testing
           while(ch != words)
        	   {
         	 read(sockfd , buff , 1024); 
-	   	 fprintf(fp , " %s" , buff);   
+	   	   fprintf(fp , "%s " , buff);   
 		 // printf(" %s %d "  , buff , ch); //Line for Testing , Ignore
 		 ch++;
 	   }
-       printf("The file was received successfully\n");
-	   printf("The new file created is glad_received.txt");
+       printf("The file was received successfully.\n");
+	   printf("The new file created is receivedFromServer.txt");
        fclose(fp);
        // printf("fclose val: %d\n",dd);
 	   printf("%c",'\n');
@@ -247,9 +257,7 @@ int main()
         insert_begin(pid);
         files++;
     }
-    // printf("%d\n", files);
-	//printf("%c",'\n');
-	//printf("%c",'\n');
+
     chdir("/proc");
     create();
     tmp = start;
@@ -290,44 +298,40 @@ int main()
         tmp = tmp->next;
         chdir("..");
     }
-    closedir(folder);
-    chdir("/home/kesar/Desktop");
-
-    // display_pqueue();
-    // 
-    // memset(buff,0,strlen(buff));
     
-            // char s1[20];
-            // sprintf(s1,"%d",pri_que[0].process);
-            // printf("%s\n",buff);
-            // strcpy(buff,s1);
-            // write(connfd, buff, 1024);
-        
-        
-            // char s2[20];
-            // sprintf(s2,"%d",pri_que[0].time);
-            // printf("%s\n",buff);
-            // strcpy(buff,s2);
-            // write(connfd, buff, 1024);
-        
-        
-            // char s3[20];
-            // sprintf(s3,"%d",pri_que[0].kernel_time);
-            // printf("%s\n",buff);
-            // strcpy(buff,s3);
-            // write(connfd, buff, 1024);
-    // char buffer[1024];
-    char toSend[] = "finally things are being sent to the server";
-    strcpy(buff,toSend);
-    printf("%s\n",buff);
+    // display_pqueue();
+
+    char s1[20];
+    sprintf(s1,"%d",pri_que[0].process);
+    chdir(s1);
+    int fd;
+        fd = open("stat",O_RDONLY);
+        if (fd ==-1){
+            printf("Error Number % d\n", errno);
+            perror("Program");                
+        }
+    
+        char info[1024];
+        char c;
+        while(read(fd,&c,1)!=0) {
+            strncat(info,&c,1);
+        }
+    strcpy(buff,info);
+    // printf("%s\n",buff);
     int a = write(sockfd,buff,sizeof(buff));   
     if (a ==-1){
             printf("Error Number % d\n", errno);
             perror("Program");                
         } 
-    printf("%d\n",a);
+
+    chdir("..");
+    chdir("/home/kesar/Desktop");
+
+    printf("%c",'\n');
 
     
     // close the socket
+    closedir(folder);
 	close(sockfd);
+    return 0;
 }
