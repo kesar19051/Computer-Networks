@@ -5,28 +5,17 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#define MAX 80
+#define MAX 1024
 #define PORT 8080
 #define SA struct sockaddr
+
 void func(int sockfd)
 {
 	char buff[MAX];
 	int n;
-	for (;;) {
-		bzero(buff, sizeof(buff));
-		printf("Enter the string : ");
-		n = 0;
-		while ((buff[n++] = getchar()) != '\n')
-			;
-		write(sockfd, buff, sizeof(buff));
-		bzero(buff, sizeof(buff));
-		read(sockfd, buff, sizeof(buff));
-		printf("From Server : %s", buff);
-		if ((strncmp(buff, "exit", 4)) == 0) {
-			printf("Client Exit...\n");
-			break;
-		}
-	}
+	read(sockfd, buff, sizeof(buff));
+	printf("From Server : %s", buff);
+	
 }
 
 int main()
@@ -57,12 +46,31 @@ int main()
 	else
 		printf("connected to the server..\n");
 
-	// function for chat
-	// func(sockfd);
-	while(1){
-		int a = 0;
-	}
-
+	char buff[MAX];
+	FILE *fp;
+         int ch = 0;
+            fp = fopen("glad_receive.txt","a");      
+            if(fp == NULL)
+    {
+        /* Unable to open file hence exit */
+        printf("Unable to open file.\n");
+        printf("Please check whether file exists and you have read privilege.\n");
+        exit(EXIT_FAILURE);
+    }      
+            int words;
+		read(sockfd, &words, sizeof(int));
+            printf("Passed integer is : %d\n" , words);      //Ignore , Line for Testing
+          while(ch != words)
+       	   {
+        	 read(sockfd , buff , 1024); 
+	   	 fprintf(fp , " %s" , buff);   
+		 // printf(" %s %d "  , buff , ch); //Line for Testing , Ignore
+		 ch++;
+	   }
+     printf("The file was received successfully\n");
+	   printf("The new file created is glad_received.txt");
+	   printf("%c",'\n');
+	
 	// close the socket
 	close(sockfd);
 }

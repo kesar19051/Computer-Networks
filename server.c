@@ -11,48 +11,6 @@
 #define PORT 8080
 #define SA struct sockaddr
 
-// Function designed for chat between client and server.
-// void func(int sockfd)
-// {
-// 	char buff[MAX];
-// 	int n;
-// 	// infinite loop for chat
-// 	int words = 0;
-// 	FILE *fp;
-// 	fp = fopen("glad.txt","r");
-
-// 	bzero(buff, MAX);
-// 	printf("%s\n", buff);
-// 	char ch;
-// 	while(ch!='*'){
-// 		fscanf(fp, "%s", buff);
-// 		write(sockfd, buff,255);
-// 		ch = fgetc(fp);
-// 	}
-// 	printf("%s\n", buff);
-// 	fclose(fp);
-
-
-		//read(sockfd, buff, sizeof(buff));
-		// print buffer which contains the client contents
-		// printf("From client: %s\t To client : ", buff);
-		// bzero(buff, MAX);
-		// n = 0;
-		// // copy server message in the buffer
-		// while ((buff[n++] = getchar()) != '\n')
-		// 	;
-
-		// // and send that buffer to client
-		// write(sockfd, buff, sizeof(buff));
-
-		// // if msg contains "Exit" then server exit and chat ended.
-		// if (strncmp("exit", buff, 4) == 0) {
-		// 	printf("Server Exit...\n");
-		// 	break;
-		// }
-	
-//}
-
 // Driver function
 int main()
 {
@@ -100,37 +58,38 @@ int main()
 	else
 		printf("server acccept the client...\n");
 
-
-
-	// Function for chatting between client and server
-	// func(connfd);
-
 	char buff[MAX];
 
-	FILE *fp;
-	fp = fopen("/home/kesar/Desktop/glad","r");
-	if(fp == NULL)
-    {
-        /* Unable to open file hence exit */
-        printf("Unable to open file.\n");
-        printf("Please check whether file exists and you have read privilege.\n");
-        exit(EXIT_FAILURE);
-    }
-	bzero(buff, MAX);
-	char str[] = "heelo";
-	strcat(buff,str);
-	printf("%s\n", buff);
-	char ch;
-	while(ch!='*'){
-		fscanf(fp, "%s", buff);
-		write(sockfd, buff,255);
-		ch = fgetc(fp);
-		//printf("%s\n", buff);
+	FILE *f;
+    
+    int words = 0;
+    char c;
+    f=fopen("/home/kesar/Desktop/glad.txt","r");
+    while((c=getc(f))!=EOF)			//Counting No of words in the file
+	{	
+		fscanf(f , "%s" , buff);
+		if(isspace(c)||c=='\t')
+		words++;	
 	}
-	fclose(fp);
-	
-	
+	//printf("Words = %d \n"  , words);	//Ignore
+       
+	write(connfd, &words, sizeof(int));
+    rewind(f);
+      
+            /*      fseek(f, 0L, SEEK_END);    	// tells size of the file. Not rquired for the functionality in code.
+	int sz = ftell(f);				//Just written for curiosity.
+	printf("Size is %d \n" , sz);
+          rewind(f);  
+            */
+    // printf("Words = %d \n"  , words);
+    while(fscanf(f, "%s", buff)!=EOF){  
+   		write(connfd,buff,sizeof(buff));  
+   } 
+
+	printf("The file was sent successfully");
+	printf("%c",'\n');
 
 	// After chatting close the socket
 	close(sockfd);
+	close(connfd);
 }
