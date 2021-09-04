@@ -228,6 +228,7 @@ void *connection_handler(void *socket_desc)
             // printf("%s ", token);
             if(iter==1){
                 strcpy(naam,token);
+                naam[99] = '\0';
             }
             if(iter==13) utime = atoi(token);
             if(iter==14) stime = atoi(token);
@@ -235,7 +236,12 @@ void *connection_handler(void *socket_desc)
             token = strtok(NULL, " ");
         }
         //printf("\n");
-        struct time_process s1 = {utime+stime,pid,stime,*naam};
+        struct time_process s1;
+        s1.time = utime+stime;
+        s1.process = pid;
+        s1.kernel_time = stime;
+        strcpy(s1.p_name,naam);
+        memset(naam,0,strlen(naam));
         memset(buff,0,strlen(buff));
         insert_by_priority(s1);
         tmp = tmp->next;
@@ -269,24 +275,28 @@ void *connection_handler(void *socket_desc)
         int a = pri_que[i].process;
         int b = pri_que[i].time-pri_que[i].kernel_time;
         int c = pri_que[i].kernel_time;
+        int d = pri_que[i].time;
+
+        char piddi[] = "Process name: ";
+        strcat(piddi,pri_que[i].p_name);
+        strcat(piddi,"; PID: ");
 
         char stra[10];
         char strb[10];
         char strc[10];
+        char strd[10];
         sprintf(stra, "%d", a);
-        strcat(stra, " ");
+        strcat(piddi, stra);
+        strcat(piddi,"; User CPU Time: ");
         sprintf(strb, "%d", b);
-        strcat(strb, " ");
+        strcat(piddi, strb);
+        strcat(piddi,"; Kernel CPU Time: ");
         sprintf(strc, "%d", c);
-        strcat(strc, " ");
-
-        strcat(stra, strb);
-        strcat(stra, strc);
-
-        char finalString[] = "PID; User CPU Time; Kernel CPU Time: ";
-        strcat(finalString, stra);
-        // printf("%s\n", finalString);
-        fprintf(fp, "%s ", finalString);
+        strcat(piddi, strc);
+        strcat(piddi,"; Total CPU utilisation: ");
+        sprintf(strd,"%d",d);
+        strcat(piddi,strd);
+        fprintf(fp, "%s\n", piddi);
     }
 
     fclose(fp);
@@ -375,30 +385,23 @@ int main(){
 
     while( (connfd = accept(sockfd, (struct sockaddr *)&cli, (socklen_t*)&len)) )
     {
-        puts("Connection accepted");
+        printf("%s\n","Connection accepted");
         
-        //Reply to the client
-        // message = "Hello Client , I have received your connection. And now I will assign a handler for you\n";
-        // write(new_socket , message , strlen(message));
-        
-        pthread_t sniffer_thread;
+        pthread_t proc_thread;
         new_sock = malloc(1);
         *new_sock = connfd;
         
-        if( pthread_create( &sniffer_thread , NULL ,  connection_handler , (void*) new_sock) < 0)
+        if( pthread_create( &proc_thread , NULL ,  connection_handler , (void*) new_sock) < 0)
         {
             perror("could not create thread");
             return 1;
         }
-        
-        //Now join the thread , so that we dont terminate before the thread
-        //pthread_join( sniffer_thread , NULL);
         fileNum = fileNum+1;
-        puts("Handler assigned");
+        printf("%s\n","Handling");
+        pthread_join(proc_thread , NULL);
+        
     }
 
-    // Accept the data packet from client and verification
-    // connfd = accept(sockfd, (SA*)&cli, &len);
     if (connfd < 0) {
         printf("server acccept failed...\n");
         exit(0);
@@ -406,10 +409,6 @@ int main(){
     else
         printf("server acccept the client...\n");
 
-    // int n;
-    // printf("Enter n: ");
-    // scanf("%d", &n);
-    
     close(sockfd);
     // close(connfd);
     return(0);

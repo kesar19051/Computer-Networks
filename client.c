@@ -23,6 +23,7 @@ struct time_process{
     int time;
     int process;
     int kernel_time;
+    char p_name[100];
 };
 
 void insert_by_priority(struct time_process);
@@ -31,7 +32,7 @@ void create();
 void check(struct time_process);
 void display_pqueue();
 //
-struct time_process endData ={-1, -1, -1};
+struct time_process endData ={-1, -1, -1, "no_name"};
 
 struct time_process pri_que[SIZE];
 
@@ -229,10 +230,18 @@ int main()
             int words;
 		read(sockfd, &words, sizeof(int));
             // printf("Passed integer is : %d\n" , words);      //Ignore , Line for Testing
+        int count = 0;
           while(ch != words)
        	   {
         	 read(sockfd , buff , 1024); 
-	   	   fprintf(fp , "%s " , buff);   
+             if(count<=15){
+                fprintf(fp , "%s " , buff); 
+             }
+             else if(count==16){
+                fprintf(fp , "%s\n" , buff);
+                count = -1;
+             }
+             count = count+1;
 		 // printf(" %s %d "  , buff , ch); //Line for Testing , Ignore
 		 ch++;
 	   }
@@ -288,7 +297,12 @@ int main()
         int iter = 0;
         int utime;
         int stime;
+        char naam[100];
         while(token!=NULL){
+            if(iter==1){
+                strcpy(naam,token);
+                naam[99] = '\0';
+            }
             // printf("%s ", token);
             if(iter==13) utime = atoi(token);
             if(iter==14) stime = atoi(token);
@@ -296,7 +310,12 @@ int main()
             token = strtok(NULL, " ");
         }
         //printf("\n");
-        struct time_process s1 = {utime+stime,pid,stime};
+        struct time_process s1;
+        s1.time = utime+stime;
+        s1.process = pid;
+        s1.kernel_time = stime;
+        strcpy(s1.p_name,naam);
+        memset(naam,0,strlen(naam));
         memset(info,0,strlen(buff));
         insert_by_priority(s1);
         tmp = tmp->next;
@@ -305,26 +324,52 @@ int main()
     
     // display_pqueue();
 
-    char s1[20];
-    sprintf(s1,"%d",pri_que[0].process);
-    chdir(s1);
-    int fd;
-        fd = open("stat",O_RDONLY);
-        if (fd ==-1){
-            printf("Error Number % d\n", errno);
-            perror("Program");                
-        }
+    // char s1[20];
+    // sprintf(s1,"%d",pri_que[0].process);
+    // chdir(s1);
+    // int fd;
+    //     fd = open("stat",O_RDONLY);
+    //     if (fd ==-1){
+    //         printf("Error Number % d\n", errno);
+    //         perror("Program");                
+    //     }
     
-        char info[1024];
-        char c;
-        while(read(fd,&c,1)!=0) {
-            strncat(info,&c,1);
-        }
-        close(fd);
-    strcpy(buff,info);
+    //     char info[1024];
+    //     char c;
+    //     while(read(fd,&c,1)!=0) {
+    //         strncat(info,&c,1);
+    //     }
+    //     close(fd);
+
+        int a = pri_que[0].process;
+        int b = pri_que[0].time-pri_que[0].kernel_time;
+        int c = pri_que[0].kernel_time;
+        int d = pri_que[0].time;
+
+        char piddi[] = "Process name: ";
+        strcat(piddi,pri_que[0].p_name);
+        strcat(piddi,"; PID: ");
+
+        char stra[10];
+        char strb[10];
+        char strc[10];
+        char strd[10];
+        sprintf(stra, "%d", a);
+        strcat(piddi, stra);
+        strcat(piddi,"; User CPU Time: ");
+        sprintf(strb, "%d", b);
+        strcat(piddi, strb);
+        strcat(piddi,"; Kernel CPU Time: ");
+        sprintf(strc, "%d", c);
+        strcat(piddi, strc);
+        strcat(piddi,"; Total CPU utilisation: ");
+        sprintf(strd,"%d",d);
+        strcat(piddi,strd);
+
+    strcpy(buff,piddi);
     // printf("%s\n",buff);
-    int a = write(sockfd,buff,sizeof(buff));   
-    if (a ==-1){
+    int aa = write(sockfd,buff,sizeof(buff));   
+    if (aa ==-1){
             printf("Error Number % d\n", errno);
             perror("Program");                
         } 
