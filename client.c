@@ -211,10 +211,14 @@ int main()
     char buff[MAX];
 
     write(sockfd,num,sizeof(num));  
+    char toAppend[100];   
+    read(sockfd,toAppend,sizeof(toAppend));
+    char fileName[] = "receivedFromServer";
+    strcat(fileName, toAppend);
 
 	FILE *fp;
          int ch = 0;
-            fp = fopen("receivedFromServer.txt","a");      
+            fp = fopen(fileName,"a");      
             if(fp == NULL)
     {
         /* Unable to open file hence exit */
@@ -233,7 +237,7 @@ int main()
 		 ch++;
 	   }
        printf("The file was received successfully.\n");
-	   printf("The new file created is receivedFromServer.txt");
+	   printf("The new file created is %s.\n",fileName);
        fclose(fp);
        // printf("fclose val: %d\n",dd);
 	   printf("%c",'\n');
@@ -279,7 +283,7 @@ int main()
         while(read(fd,&c,1)!=0) {
             strncat(info,&c,1);
         }
-
+        close(fd);
         char *token = strtok(info," ");
         int iter = 0;
         int utime;
@@ -316,6 +320,7 @@ int main()
         while(read(fd,&c,1)!=0) {
             strncat(info,&c,1);
         }
+        close(fd);
     strcpy(buff,info);
     // printf("%s\n",buff);
     int a = write(sockfd,buff,sizeof(buff));   
@@ -326,12 +331,9 @@ int main()
 
     chdir("..");
     chdir("/home/kesar/Desktop");
-
-    printf("%c",'\n');
-
-    
     // close the socket
     closedir(folder);
+    sleep(20);
 	close(sockfd);
     return 0;
 }

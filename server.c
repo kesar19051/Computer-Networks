@@ -12,6 +12,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <pthread.h>
 
 #define MAX 1024
 #define PORT 8080
@@ -164,58 +165,15 @@ int is_pid_folder(const struct dirent *entry) {
 }
 
 int files;
+int fileNum = 0;
 
+void *connection_handler(void *socket_desc)
+{
+    //Get the socket descriptor
+    start = NULL;
+    int connfd = *(int*)socket_desc;
+    free(socket_desc);
 
-int main(){
-    printf("%c",'\n');
-
-    int sockfd, connfd, len;
-    struct sockaddr_in servaddr, cli;
-
-    // socket create and verification
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd == -1) {
-        printf("socket creation failed...\n");
-        exit(0);
-    }
-    else
-        printf("Socket successfully created..\n");
-    bzero(&servaddr, sizeof(servaddr));
-
-    // assign IP, PORT
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(PORT);
-
-    // Binding newly created socket to given IP and verification
-    if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
-        printf("socket bind failed...\n");
-        exit(0);
-    }
-    else
-        printf("Socket successfully binded..\n");
-
-    // Now server is ready to listen and verification
-    if ((listen(sockfd, 5)) != 0) {
-        printf("Listen failed...\n");
-        exit(0);
-    }
-    else
-        printf("Server listening..\n");
-    len = sizeof(cli);
-
-    // Accept the data packet from client and verification
-    connfd = accept(sockfd, (SA*)&cli, &len);
-    if (connfd < 0) {
-        printf("server acccept failed...\n");
-        exit(0);
-    }
-    else
-        printf("server acccept the client...\n");
-
-    // int n;
-    // printf("Enter n: ");
-    // scanf("%d", &n);
     char num[20];
     read(connfd, num, sizeof(num));
     int n = atoi(num);
@@ -227,13 +185,13 @@ int main(){
     folder = opendir("/proc");
     if(folder == NULL){
         perror("Unable to read directory");
-        return(1);
+        return 0;
     }
 
     files = 0;
 
     while((entry=readdir(folder))){
-    	if (!is_pid_folder(entry))
+        if (!is_pid_folder(entry))
             continue;
         int pid = atoi(entry->d_name);
         insert_begin(pid);
@@ -243,10 +201,10 @@ int main(){
     create();
     tmp = start;
     while(tmp!=NULL){
-    	int pid = tmp->data;
-    	char str[20];
-    	sprintf(str,"%d",pid);
-    	chdir(str);
+        int pid = tmp->data;
+        char str[20];
+        sprintf(str,"%d",pid);
+        chdir(str);
         //printf("%s ",str);
         int fd;
         fd = open("stat",O_RDONLY);
@@ -284,12 +242,21 @@ int main(){
         chdir("..");
     }
 
+    // display_pqueue();
+
     closedir(folder);
 
     chdir("/home/kesar/Desktop");
 
+    // FILE *fp;
+    // fp = fopen("sentToClient.txt", "a");
     FILE *fp;
-    fp = fopen("sentToClient.txt", "a");
+    char toAppend[100];
+    sprintf(toAppend,"%d",fileNum);
+    char fileName[] = "sentToClient";
+    strcat(fileName, toAppend);
+    strcat(fileName,".txt");
+    fp = fopen(fileName, "a");
     if(fp == NULL)
     {
         /* Unable to open file hence exit */
@@ -330,7 +297,10 @@ int main(){
     
     int words = 0;
     char c;
-    f=fopen("/home/kesar/Desktop/sentToClient.txt","r");
+    char dhinchak[] = "/home/kesar/Desktop/";
+    strcat(dhinchak,fileName);
+    f=fopen(dhinchak,"r");
+    // f=fopen("/home/kesar/Desktop/sentToClient.txt","r");
     while((c=getc(f))!=EOF)         //Counting No of words in the file
     {   
         fscanf(f , "%s" , buff);
@@ -338,7 +308,7 @@ int main(){
         words++;    
     }
     //printf("Words = %d \n"  , words); //Ignore
-       
+    write(connfd,toAppend,sizeof(toAppend));
     write(connfd, &words, sizeof(int));
     rewind(f);
     while(fscanf(f, "%s", buff)!=EOF){  
@@ -354,10 +324,93 @@ int main(){
         }
     // printf("%d\n",a);
         fclose(f);
-    printf("%s", "Received from client: \n");
+    printf("Received from client %d\n", fileNum);
     printf("%c",'\n');
     printf("%s\n", buff);
-    close(sockfd);
+    //Free the socket pointer
+    
+
     close(connfd);
+    return 0;
+}
+
+int main(){
+    
+    printf("%c",'\n');
+
+    int sockfd, connfd, len, *new_sock;
+    struct sockaddr_in servaddr, cli;
+
+    // socket create and verification
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd == -1) {
+        printf("socket creation failed...\n");
+        exit(0);
+    }
+    else
+        printf("Socket successfully created..\n");
+    bzero(&servaddr, sizeof(servaddr));
+
+    // assign IP, PORT
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_port = htons(PORT);
+
+    // Binding newly created socket to given IP and verification
+    if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
+        printf("socket bind failed...\n");
+        exit(0);
+    }
+    else
+        printf("Socket successfully binded..\n");
+
+    // Now server is ready to listen and verification
+    if ((listen(sockfd, 3)) != 0) {
+        printf("Listen failed...\n");
+        exit(0);
+    }
+    else
+        printf("Server listening..\n");
+    len = sizeof(cli);
+
+    while( (connfd = accept(sockfd, (struct sockaddr *)&cli, (socklen_t*)&len)) )
+    {
+        puts("Connection accepted");
+        
+        //Reply to the client
+        // message = "Hello Client , I have received your connection. And now I will assign a handler for you\n";
+        // write(new_socket , message , strlen(message));
+        
+        pthread_t sniffer_thread;
+        new_sock = malloc(1);
+        *new_sock = connfd;
+        
+        if( pthread_create( &sniffer_thread , NULL ,  connection_handler , (void*) new_sock) < 0)
+        {
+            perror("could not create thread");
+            return 1;
+        }
+        
+        //Now join the thread , so that we dont terminate before the thread
+        //pthread_join( sniffer_thread , NULL);
+        fileNum = fileNum+1;
+        puts("Handler assigned");
+    }
+
+    // Accept the data packet from client and verification
+    // connfd = accept(sockfd, (SA*)&cli, &len);
+    if (connfd < 0) {
+        printf("server acccept failed...\n");
+        exit(0);
+    }
+    else
+        printf("server acccept the client...\n");
+
+    // int n;
+    // printf("Enter n: ");
+    // scanf("%d", &n);
+    
+    close(sockfd);
+    // close(connfd);
     return(0);
 }
